@@ -44,19 +44,25 @@ bool validate(char* input) {
 }
 
 //function to interpret a command typed in the shell
-void interpret(char* line) {
+void interpret(char* line[]) {
 	int status;
-	int lineLength = strlen(line);
+	//int lineLength = strlen(line);
 
-	printf("Interpret this: %s\n", line);
+	//printf("Interpret this: %s\n", line);
+
+	char* argv[1];
+	argv[0] = line[0];
+	char* args[2];
+	args[0] = "-l";
+	args[1] = "-i";
 
 	int pid = fork();
 
 	if (pid == 0) {
-		execvp(line);
+		execvp(argv[0], args);
 		printf("$ERROR: Command failed.\n");
 	} else {
-		wait(&status);
+		wait();
 	}
 }
 
@@ -127,7 +133,7 @@ int main () {
 
 			//interpret the command
 			if (execute == true) {
-				interpret(*strArray);
+				interpret(strArray);
 			}
 
 
