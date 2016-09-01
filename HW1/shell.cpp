@@ -50,20 +50,23 @@ void interpret(char* line[]) {
 
 	//printf("Interpret this: %s\n", line);
 
-	char* argv[1];
-	argv[0] = line[0];
-	char* args[2];
-	args[0] = "-l";
-	args[1] = "-i";
+	// char* argv[1];
+	// argv[0] = line[0];
+
+	char* args[4];
+	args[0] = line[0];
+	args[1] = "-l";
+	args[2] = "-i";
+	args[3] = NULL;
 
 	int pid = fork();
 
 	if (pid == 0) {
 		execvp(argv[0], args);
 		printf("$ERROR: Command failed.\n");
-	} else {
-		wait();
-	}
+	} 
+
+	wait();
 }
 
 int main () {
