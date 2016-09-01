@@ -62,8 +62,9 @@ void interpret(char* line[]) {
 	int pid = fork();
 
 	if (pid == 0) {
-		execvp(argv[0], args);
+		execvp(args[0], args);
 		printf("$ERROR: Command failed.\n");
+		exit(0);
 	} 
 
 	wait();
@@ -73,10 +74,11 @@ int main () {
 	char command[255]; //initializing string of command
 	int length; //length of command
 	char *new_command;
-	bool execute = true;
+	bool execute;
 	
 	while (true) {
 		printf("$"); //start shell
+		execute = true;
 		fgets(command, 255, stdin); //read in standard input
 		new_command = strtok(command, "\n");
 		length = strlen(new_command); //length of command input
