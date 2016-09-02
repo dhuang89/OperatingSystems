@@ -55,7 +55,7 @@ void interpret(char* line[], int length) {
 
 	if (pid == 0) {
 		execvp(args[0], args);
-		printf("$ERROR: Command failed.\n");
+		printf("ERROR: Command failed.\n");
 		exit(0);
 	} 
 
@@ -69,21 +69,21 @@ int main () {
 	bool execute;
 	
 	while (true) {
-		printf("$"); //start shell
+		//start shell
 		execute = true;
 		fgets(command, 255, stdin); //read in standard input
 		new_command = strtok(command, "\n");
 		length = strlen(new_command); //length of command input
 
 		if (length > 100) { //if command is more than 100 characters, print out an error
-			printf("$ERROR: Exceeded maximum length of 100 characters.\n");
+			printf("ERROR: Exceeded maximum length of 100 characters.\n");
 			
 		}
 		else if (strcmp(new_command, "exit") == 0) { //break out of shell command
 			break;
 		} 
 		else if (!validate(new_command)) { //invalid char is input
-			printf("$ERROR: Invalid character found.\n");
+			printf("ERROR: Invalid character found.\n");
 		}
 		else {
 			//parse each line into an array of strings
@@ -99,10 +99,11 @@ int main () {
 				token = strtok(NULL, s);
 				arrayLen++;
 			}
+			printf("%d\n", arrayLen);
 
 			//go through array and validate syntax
 			for (i = 0; i < arrayLen; i++) {
-				printf("Array: %s\n", strArray[i]);
+				//printf("Array: %s\n", strArray[i]);
 
 				if (i == 0 && (strcmp(strArray[i], ">") == 0 || strcmp(strArray[i], "<") == 0 || strcmp(strArray[i], "|") == 0)) {
 					//if operator is part of a word
@@ -111,19 +112,25 @@ int main () {
 					// 	break; 
 					// }
 					execute = false;
-					printf("$ERROR: Input must begin with a word.\n");
+					printf("ERROR: Input must begin with a word.\n");
 				}
 
 				if (strcmp(strArray[i], ">>") == 0 || strcmp(strArray[i], "<<") == 0 || strcmp(strArray[i], "<>") == 0 || strcmp(strArray[i], "><") == 0) {
 					execute = false;
-					printf("$ERROR: Output redirection operators cannot be next to one another.\n");
+					printf("ERROR: Output redirection operators cannot be next to one another.\n");
 				}
 
 				if (strcmp(strArray[i], "<") == 0 || strcmp(strArray[i], ">") == 0 || strcmp(strArray[i], "|") == 0) {
 					if (strcmp(strArray[i + 1], "|") == 0 || strcmp(strArray[i + 1], "<") == 0 || strcmp(strArray[i + 1], ">") == 0) {
 						execute = false;
-						printf("$ERROR: Operators cannot be succeeded with another operator.\n");
+						printf("ERROR: Operators cannot be succeeded with another operator.\n");
 					}
+				}
+
+				if (strcmp(strArray[i], "|") == 0 && i == arrayLen - 1) {
+					printf("i is: %d\n", i);
+					execute = false;
+					printf("ERROR: Pipe command must be separating two words.\n");
 				}
 
 			}
