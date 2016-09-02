@@ -2,13 +2,6 @@
 //dlh4fx
 //CS 4414-001
 
-/** Questions
- * max length for standard input
- * null character counts as a char
- * EOF
- * new line delimiter
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -44,20 +37,19 @@ bool validate(char* input) {
 }
 
 //function to interpret a command typed in the shell
-void interpret(char* line[]) {
+void interpret(char* line[], int length) {
 	int status;
-	//int lineLength = strlen(line);
+	int lineLength = length;
+	char* args[lineLength];
+	// args[0] = line[0];
+	// args[1] = "-l";
+	// args[2] = "-i";
+	// args[3] = NULL;
 
-	//printf("Interpret this: %s\n", line);
-
-	// char* argv[1];
-	// argv[0] = line[0];
-
-	char* args[4];
-	args[0] = line[0];
-	args[1] = "-l";
-	args[2] = "-i";
-	args[3] = NULL;
+	for (int i = 0; i < lineLength; i++) {
+		args[i] = line[i];
+	}
+	args[lineLength] = NULL;
 
 	int pid = fork();
 
@@ -138,7 +130,7 @@ int main () {
 
 			//interpret the command
 			if (execute == true) {
-				interpret(strArray);
+				interpret(strArray, arrayLen);
 			}
 
 
