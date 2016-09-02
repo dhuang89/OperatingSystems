@@ -48,6 +48,9 @@ void interpret(char* line[], int length) {
 	int output_file;
 	bool output = false;
 	char* output_name;
+	int input_file;
+	bool input = false;
+	char* input_name;
 	// args[0] = line[0];
 	// args[1] = "-l";
 	// args[2] = "-i";
@@ -64,11 +67,22 @@ void interpret(char* line[], int length) {
 			args[i+1] = NULL;
 		}
 
+		if (strcmp(line[i], "<") == 0) {
+			input = true;
+			input_name = line[i+1];
+			args[i] = NULL;
+			args[i+1] = NULL;
+		}
+
 	}
 	args[lineLength] = NULL;
 
 	if (output) {
 		output_file = open(output_name, O_CREAT | O_RDWR, 0777);
+	}
+
+	if (input) {
+		input_file = open(input_name, O_CREAT | O_RDONLY, 0777);
 	}
 
 	int pid = fork();
@@ -77,6 +91,10 @@ void interpret(char* line[], int length) {
 
 		if (output) {
 			dup2(output_file, 1);
+		}
+
+		if (input) {
+			dup2(input_file, 0);
 		}
 
 		execvp(args[0], args);
@@ -88,6 +106,10 @@ void interpret(char* line[], int length) {
 
 	if (output) {
 		close(output_file);
+	}
+
+	if (input) {
+		close(input_file);
 	}
 }
 
