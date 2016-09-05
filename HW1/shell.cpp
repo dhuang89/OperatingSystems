@@ -40,41 +40,68 @@ bool validate(char* input) {
 }
 
 //function to interpret a command typed in the shell
-void interpret(char* line[], int length) {
+void interpret(char* line[], int length, int pipeNum) {
 	int status;
 	int lineLength = length;
 	char* args[lineLength];
-
+	int pipefd[2];
+	pipe(pipefd);
+	bool pipeBool = false;
 	int output_file;
 	bool output = false;
 	char* output_name;
 	int input_file;
 	bool input = false;
 	char* input_name;
-	// args[0] = line[0];
-	// args[1] = "-l";
-	// args[2] = "-i";
-	// args[3] = NULL;
+    char *argv1[10];
+    char *argv2[10];
+    int helper;
+    int helper2 = 0;
+    int track = 0;
 
-	for (int i = 0; i < lineLength; i++) {
-		//redirection
-		args[i] = line[i];
+    if (pipeNum > 0) {
+    	pipeBool = true;
+    	for (track = 0; track < lineLength; track++) {
+    		if (strcmp(line[track], "|") == 0) {
+    			helper = track;
+    			args[helper] = NULL;
+    			for (int jj = 0; jj < helper; jj++) {
+    				argv1[jj] = line[jj];
 
-		if (strcmp(line[i], ">") == 0) {
-			output = true;
-			output_name = line[i+1];
-			args[i] = NULL;
-			args[i+1] = NULL;
-		}
+    			}
+    		}
+    	}
 
-		if (strcmp(line[i], "<") == 0) {
-			input = true;
-			input_name = line[i+1];
-			args[i] = NULL;
-			args[i+1] = NULL;
-		}
+    	for (helper = 4; helper < lineLength; helper++) {
+    		argv2[helper2] = line[helper];
+    		args[helper2] = NULL;
+    		helper2++;
+    	}
+    } else {
+    	for (int i = 0; i < lineLength; i++) {
+    		argv1[i] = line[i];
+    	}
+    }
 
-	}
+	// for (int i = 0; i < lineLength; i++) {
+	// 	//redirection
+	// 	args[i] = line[i];
+
+	// 	if (strcmp(line[i], ">") == 0) {
+	// 		output = true;
+	// 		output_name = line[i+1];
+	// 		args[i] = NULL;
+	// 		args[i+1] = NULL;
+	// 	}
+
+	// 	if (strcmp(line[i], "<") == 0) {
+	// 		input = true;
+	// 		input_name = line[i+1];
+	// 		args[i] = NULL;
+	// 		args[i+1] = NULL;
+	// 	}
+
+	// }
 	args[lineLength] = NULL;
 
 	if (output) {
@@ -96,11 +123,30 @@ void interpret(char* line[], int length) {
 		if (input) {
 			dup2(input_file, 0);
 		}
+		if (pipeBool == true) {
+			dup2(pipefd[1], 1);
+        	close(pipefd[0]);
+		}
+		
 
-		execvp(args[0], args);
+        for (int i = 0; i < lineLength; i++) {
+        	printf("Args: %s\n", argv1[i]);
+        }
+		execvp(argv1[0], argv1);
 		printf("ERROR: Command failed.\n");
 		exit(0);
 	} 
+
+	int pid2 = fork();
+    if (pid2 == 0) {
+        dup2(pipefd[0], 0);
+        close(pipefd[1]);
+        execvp(argv2[0], argv2);
+        printf("ERROR: Command failed.\n");
+      
+    }
+       close(pipefd[0]);
+       close(pipefd[1]);
 
 	wait();
 
@@ -142,6 +188,7 @@ int main () {
 			char *strArray[50]; //store into preset array with length of 50
 			int i = 0;
 			int arrayLen = 0; //track array's length
+			int pipeCount = 0;
 			char *token;
 			token = strtok(new_command, s);
 
@@ -155,6 +202,10 @@ int main () {
 			for (i = 0; i < arrayLen; i++) {
 
 				int innerLen = strlen(strArray[i]);
+
+				if (strcmp(strArray[i], "|") == 0) {
+					pipeCount++;
+				}
 
 				if (i == 0 && (strcmp(strArray[i], ">") == 0 || strcmp(strArray[i], "<") == 0 || strcmp(strArray[i], "|") == 0)) {
 					execute = false;
@@ -192,7 +243,7 @@ int main () {
 
 			//interpret the command
 			if (execute == true) {
-				interpret(strArray, arrayLen);
+				interpret(strArray, arrayLen, pipeCount);
 			}
 
 
