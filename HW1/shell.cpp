@@ -83,26 +83,26 @@ void interpret(char* line[], int length, int pipeNum) {
     	}
     }
 
-	// for (int i = 0; i < lineLength; i++) {
-	// 	//redirection
-	// 	args[i] = line[i];
+	for (int i = 0; i < lineLength; i++) {
+		//redirection
+		//args[i] = line[i];
 
-	// 	if (strcmp(line[i], ">") == 0) {
-	// 		output = true;
-	// 		output_name = line[i+1];
-	// 		args[i] = NULL;
-	// 		args[i+1] = NULL;
-	// 	}
+		if (strcmp(line[i], ">") == 0) {
+			output = true;
+			output_name = line[i+1];
+			argv1[i] = NULL;
+			argv1[i+1] = NULL;
+		}
 
-	// 	if (strcmp(line[i], "<") == 0) {
-	// 		input = true;
-	// 		input_name = line[i+1];
-	// 		args[i] = NULL;
-	// 		args[i+1] = NULL;
-	// 	}
+		if (strcmp(line[i], "<") == 0) {
+			input = true;
+			input_name = line[i+1];
+			argv1[i] = NULL;
+			argv1[i+1] = NULL;
+		}
 
-	// }
-	args[lineLength] = NULL;
+	}
+	argv1[lineLength] = NULL;
 
 	if (output) {
 		output_file = open(output_name, O_CREAT | O_RDWR, 0777);
@@ -128,10 +128,6 @@ void interpret(char* line[], int length, int pipeNum) {
         	close(pipefd[0]);
 		}
 		
-
-        for (int i = 0; i < lineLength; i++) {
-        	printf("Args: %s\n", argv1[i]);
-        }
 		execvp(argv1[0], argv1);
 		printf("ERROR: Command failed.\n");
 		exit(0);
