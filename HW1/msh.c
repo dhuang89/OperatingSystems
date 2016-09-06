@@ -44,9 +44,12 @@ bool validate(char* input) {
 //function to interpret a command typed in the shell
 void interpret(char* line[], int length, int pipeNum) {
 	int status;
+	int forkNum = 0;
+	int pipeIndex = 0;
+	int ii = 0;
 	int lineLength = length;
 	//char* args[lineLength];
-	int pipefd[2];
+	int pipefd[2 * pipeNum];
 	pipe(pipefd);
 	bool pipeBool = false;
 	int output_file;
@@ -57,104 +60,150 @@ void interpret(char* line[], int length, int pipeNum) {
 	char* input_name;
     char *argv1[10];
     char *argv2[10];
-    int helper;
+    int helper = 0;
     int helper2 = 0;
-    int track = 0;
+ 
 
-    if (pipeNum > 0) {
-    	pipeBool = true;
-    	for (track = 0; track < lineLength; track++) {
-    		if (strcmp(line[track], "|") == 0) {
-    			helper = track;
-    			//args[helper] = NULL;
-    			for (int jj = 0; jj < helper; jj++) {
-    				argv1[jj] = line[jj];
+    // if (pipeNum > 0) {
+    // 	pipeBool = true;
+    // 	for (track = 0; track < lineLength; track++) {
+    // 		if (strcmp(line[track], "|") == 0) {
+    // 			helper = track;
+    // 			//args[helper] = NULL;
+    // 			for (int jj = 0; jj < helper; jj++) {
+    // 				argv1[jj] = line[jj];
 
-    			}
+    // 			}
+    // 		}
+    // 	}
+
+    // 	for (helper = 4; helper < lineLength; helper++) {
+    // 		argv2[helper2] = line[helper];
+    // 		//args[helper2] = NULL;
+    // 		helper2++;
+    // 	}
+    // } else {
+    // 	for (int i = 0; i < lineLength; i++) {
+    // 		argv1[i] = line[i];
+    // 	}
+    // }
+
+    while (forkNum < pipeNum + 1) {
+    	char *args[200];
+    	int argIndex = 0;
+    	int track = 0;
+    	bool write;
+
+    	if (ii > 0) {
+    		write = false;
+    	}
+
+    	for (ii; ii < lineLength; ii++) {
+    		if (strcmp(line[ii], "|") == 0) {
+    			write = true;
+    			break;
+    		} 
+    		args[argIndex + track] = line[ii];
+    		track++;
+    	}
+
+    	args[track] = NULL;
+    	ii++;
+    	forkNum++;
+    	printf("fork time\n");
+    	int pid = fork();
+
+    	if (pid == 0) {
+    		if (write == true) {
+    			dup2(pipefd[1], 1);
+    			close(pipefd[0]);
+
+    		} else {
+    			dup2(pipefd[0], 0);
+    			close(pipefd[1]);
     		}
-    	}
+    		
+    		execvp(args[0], args);
+    		printf("ERROR: Command failed.\n");
+    		exit(0);
 
-    	for (helper = 4; helper < lineLength; helper++) {
-    		argv2[helper2] = line[helper];
-    		//args[helper2] = NULL;
-    		helper2++;
-    	}
-    } else {
-    	for (int i = 0; i < lineLength; i++) {
-    		argv1[i] = line[i];
-    	}
+    	} 
+
     }
 
-	for (int i = 0; i < lineLength; i++) {
-		//redirection
-		//args[i] = line[i];
+	// for (int i = 0; i < lineLength; i++) {
+	// 	//redirection
+	// 	//args[i] = line[i];
 
-		if (strcmp(line[i], ">") == 0) {
-			output = true;
-			output_name = line[i+1];
-			argv1[i] = NULL;
-			argv1[i+1] = NULL;
-		}
+	// 	if (strcmp(line[i], ">") == 0) {
+	// 		output = true;
+	// 		output_name = line[i+1];
+	// 		argv1[i] = NULL;
+	// 		argv1[i+1] = NULL;
+	// 	}
 
-		if (strcmp(line[i], "<") == 0) {
-			input = true;
-			input_name = line[i+1];
-			argv1[i] = NULL;
-			argv1[i+1] = NULL;
-		}
+	// 	if (strcmp(line[i], "<") == 0) {
+	// 		input = true;
+	// 		input_name = line[i+1];
+	// 		argv1[i] = NULL;
+	// 		argv1[i+1] = NULL;
+	// 	}
 
-	}
-	argv1[lineLength] = NULL;
+	// }
+	// argv1[lineLength] = NULL;
 
-	if (output) {
-		output_file = open(output_name, O_CREAT | O_RDWR, 0777);
-	}
+	// if (output) {
+	// 	output_file = open(output_name, O_CREAT | O_RDWR, 0777);
+	// }
 
-	if (input) {
-		input_file = open(input_name, O_CREAT | O_RDONLY, 0777);
-	}
+	// if (input) {
+	// 	input_file = open(input_name, O_CREAT | O_RDONLY, 0777);
+	// }
 
-	int pid = fork();
+	// int pid = fork();
 
-	if (pid == 0) {
+	// if (pid == 0) {
 
-		if (output) {
-			dup2(output_file, 1);
-		}
+	// 	if (output) {
+	// 		dup2(output_file, 1);
+	// 	}
 
-		if (input) {
-			dup2(input_file, 0);
-		}
-		if (pipeBool == true) {
-			dup2(pipefd[1], 1);
-        	close(pipefd[0]);
-		}
+	// 	if (input) {
+	// 		dup2(input_file, 0);
+	// 	}
+	// 	if (pipeBool == true) {
+	// 		dup2(pipefd[1], 1);
+ //        	close(pipefd[0]);
+	// 	}
 		
-		execvp(argv1[0], argv1);
-		printf("ERROR: Command failed.\n");
-		exit(0);
-	} 
+	// 	execvp(argv1[0], argv1);
+	// 	printf("ERROR: Command failed.\n");
+	// 	exit(0);
+	// } 
 
-	int pid2 = fork();
-    if (pid2 == 0) {
-        dup2(pipefd[0], 0);
-        close(pipefd[1]);
-        execvp(argv2[0], argv2);
-        printf("ERROR: Command failed.\n");
+	// int pid2 = fork();
+ //    if (pid2 == 0) {
+ //        dup2(pipefd[0], 0);
+ //        close(pipefd[1]);
+ //        execvp(argv2[0], argv2);
+ //        printf("ERROR: Command failed.\n");
       
-    }
-       close(pipefd[0]);
-       close(pipefd[1]);
+ //    }
+ //    close(pipefd[0]);
+ //    close(pipefd[1]);
+ //    if (output) {
+	// 	close(output_file);
+	// }
 
+	// if (input) {
+	// 	close(input_file);
+	// }
+	for (int xx = 0; xx < 2*pipeNum; xx++) {
+		close(pipefd[xx]);
+	}
 	wait(&status);
 
-	if (output) {
-		close(output_file);
-	}
 
-	if (input) {
-		close(input_file);
-	}
 }
 
 int main () {
@@ -189,6 +238,7 @@ int main () {
 			int pipeCount = 0;
 			char *token;
 			token = strtok(new_command, s);
+			
 
 			while (token != NULL) {
 				strArray[i++] = token;
