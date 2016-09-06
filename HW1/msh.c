@@ -4,10 +4,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
-#include <cstring>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 
 //contains all valid chars
@@ -43,7 +45,7 @@ bool validate(char* input) {
 void interpret(char* line[], int length, int pipeNum) {
 	int status;
 	int lineLength = length;
-	char* args[lineLength];
+	//char* args[lineLength];
 	int pipefd[2];
 	pipe(pipefd);
 	bool pipeBool = false;
@@ -64,7 +66,7 @@ void interpret(char* line[], int length, int pipeNum) {
     	for (track = 0; track < lineLength; track++) {
     		if (strcmp(line[track], "|") == 0) {
     			helper = track;
-    			args[helper] = NULL;
+    			//args[helper] = NULL;
     			for (int jj = 0; jj < helper; jj++) {
     				argv1[jj] = line[jj];
 
@@ -74,7 +76,7 @@ void interpret(char* line[], int length, int pipeNum) {
 
     	for (helper = 4; helper < lineLength; helper++) {
     		argv2[helper2] = line[helper];
-    		args[helper2] = NULL;
+    		//args[helper2] = NULL;
     		helper2++;
     	}
     } else {
@@ -144,7 +146,7 @@ void interpret(char* line[], int length, int pipeNum) {
        close(pipefd[0]);
        close(pipefd[1]);
 
-	wait();
+	wait(&status);
 
 	if (output) {
 		close(output_file);
