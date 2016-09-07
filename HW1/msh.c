@@ -62,36 +62,12 @@ void interpret(char* line[], int length, int pipeNum) {
     char *argv2[10];
     int helper = 0;
     int helper2 = 0;
- 
-
-    // if (pipeNum > 0) {
-    // 	pipeBool = true;
-    // 	for (track = 0; track < lineLength; track++) {
-    // 		if (strcmp(line[track], "|") == 0) {
-    // 			helper = track;
-    // 			//args[helper] = NULL;
-    // 			for (int jj = 0; jj < helper; jj++) {
-    // 				argv1[jj] = line[jj];
-
-    // 			}
-    // 		}
-    // 	}
-
-    // 	for (helper = 4; helper < lineLength; helper++) {
-    // 		argv2[helper2] = line[helper];
-    // 		//args[helper2] = NULL;
-    // 		helper2++;
-    // 	}
-    // } else {
-    // 	for (int i = 0; i < lineLength; i++) {
-    // 		argv1[i] = line[i];
-    // 	}
-    // }
 
     while (forkNum < pipeNum + 1) {
     	char *args[200];
     	int argIndex = 0;
     	int track = 0;
+    	int argLen = 0;
     	bool write;
 
     	if (ii > 0) {
@@ -105,22 +81,69 @@ void interpret(char* line[], int length, int pipeNum) {
     		} 
     		args[argIndex + track] = line[ii];
     		track++;
+    		argLen++;
     	}
 
     	args[track] = NULL;
     	ii++;
+
+    	for (int i = 0; i < argLen; i++) {
+    		if (strcmp(args[i], ">") == 0) {
+    			output = true;
+    		}
+    		if (strcmp(args[i], "<") == 0) {
+    			input = true;
+    		}
+    	}
+
+    	//redirection
+    	if (output) {
+    		for (int i = 0; i < argLen; i++) {
+				if (strcmp(args[i], ">") == 0) {
+					output_name = args[i+1];
+					output_file = open(output_name, O_CREAT | O_RDWR, 0777);
+					args[i] = NULL;
+					args[i+1] = NULL;
+					break;
+				}
+			}
+    	} 
+	
+		if (input) {
+			for (int j = 0; j < argLen; j++) {
+				if (strcmp(args[j], "<") == 0) {
+					input_name = args[j+1];
+					input_file = open(input_name, O_CREAT | O_RDONLY, 0777);
+					args[j] = NULL;
+					args[j+1] = NULL;
+					break;
+				}
+			}
+		}
+		
     	forkNum++;
-    	printf("fork time\n");
     	int pid = fork();
 
     	if (pid == 0) {
-    		if (write == true) {
-    			dup2(pipefd[1], 1);
-    			close(pipefd[0]);
 
-    		} else {
-    			dup2(pipefd[0], 0);
-    			close(pipefd[1]);
+    		if (output) {
+    			dup2(output_file, 1);
+    		}
+
+    		if (input) {
+    			dup2(input_file, 0);
+    		}
+
+    		if (pipeNum > 0) {
+    			if (write == true) {
+    				dup2(pipefd[1], 1);
+    				close(pipefd[0]);
+
+    			} else {
+    				dup2(pipefd[0], 0);
+    				close(pipefd[1]);
+    			}
+
     		}
     		
     		execvp(args[0], args);
@@ -131,77 +154,21 @@ void interpret(char* line[], int length, int pipeNum) {
 
     }
 
-	// for (int i = 0; i < lineLength; i++) {
-	// 	//redirection
-	// 	//args[i] = line[i];
-
-	// 	if (strcmp(line[i], ">") == 0) {
-	// 		output = true;
-	// 		output_name = line[i+1];
-	// 		argv1[i] = NULL;
-	// 		argv1[i+1] = NULL;
-	// 	}
-
-	// 	if (strcmp(line[i], "<") == 0) {
-	// 		input = true;
-	// 		input_name = line[i+1];
-	// 		argv1[i] = NULL;
-	// 		argv1[i+1] = NULL;
-	// 	}
-
-	// }
-	// argv1[lineLength] = NULL;
-
-	// if (output) {
-	// 	output_file = open(output_name, O_CREAT | O_RDWR, 0777);
-	// }
-
-	// if (input) {
-	// 	input_file = open(input_name, O_CREAT | O_RDONLY, 0777);
-	// }
-
-	// int pid = fork();
-
-	// if (pid == 0) {
-
-	// 	if (output) {
-	// 		dup2(output_file, 1);
-	// 	}
-
-	// 	if (input) {
-	// 		dup2(input_file, 0);
-	// 	}
-	// 	if (pipeBool == true) {
-	// 		dup2(pipefd[1], 1);
- //        	close(pipefd[0]);
-	// 	}
-		
-	// 	execvp(argv1[0], argv1);
-	// 	printf("ERROR: Command failed.\n");
-	// 	exit(0);
-	// } 
-
-	// int pid2 = fork();
- //    if (pid2 == 0) {
- //        dup2(pipefd[0], 0);
- //        close(pipefd[1]);
- //        execvp(argv2[0], argv2);
- //        printf("ERROR: Command failed.\n");
-      
- //    }
- //    close(pipefd[0]);
- //    close(pipefd[1]);
- //    if (output) {
-	// 	close(output_file);
-	// }
-
-	// if (input) {
-	// 	close(input_file);
-	// }
+	//make sure all pipes are closed	
 	for (int xx = 0; xx < 2*pipeNum; xx++) {
 		close(pipefd[xx]);
 	}
+	//wait for processes to finish
 	wait(&status);
+
+	//close files if necessary
+	if (output) {
+		close(output_file);
+	}
+
+	if (input) {
+		close(input_file);
+	}
 
 
 }
