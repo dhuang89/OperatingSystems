@@ -48,7 +48,6 @@ void interpret(char* line[], int length, int pipeNum) {
 	int pipeIndex = 0;
 	int ii = 0;
 	int lineLength = length;
-	//char* args[lineLength];
 	int pipefd[2 * pipeNum];
 	pipe(pipefd);
 	bool pipeBool = false;
@@ -58,8 +57,6 @@ void interpret(char* line[], int length, int pipeNum) {
 	int input_file;
 	bool input = false;
 	char* input_name;
-    char *argv1[10];
-    char *argv2[10];
     int helper = 0;
     int helper2 = 0;
 
@@ -120,7 +117,7 @@ void interpret(char* line[], int length, int pipeNum) {
 				}
 			}
 		}
-		
+
     	forkNum++;
     	int pid = fork();
 
@@ -225,6 +222,14 @@ int main () {
 				if (i == 0 && (strcmp(strArray[i], ">") == 0 || strcmp(strArray[i], "<") == 0 || strcmp(strArray[i], "|") == 0)) {
 					execute = false;
 					printf("ERROR: Input must begin with a word.\n");
+					
+				}
+
+				if (strcmp(strArray[i], ">") == 0 && i < arrayLen - 2) {
+					if (strcmp(strArray[i + 2], "|") == 0) {
+						printf("ERROR: Name of text file cannot be written into a pipe.\n");
+						
+					}
 				}
 
 				if (strcmp(strArray[i], ">>") == 0 || strcmp(strArray[i], "<<") == 0 || strcmp(strArray[i], "<>") == 0 || strcmp(strArray[i], "><") == 0) {
