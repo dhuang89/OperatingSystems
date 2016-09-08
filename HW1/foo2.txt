@@ -1,0 +1,5 @@
+a.out
+foo2.txt
+foo.txt
+msh.c
+test.c

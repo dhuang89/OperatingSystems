@@ -1,4 +1,3 @@
-
 //Dennis Huang
 //dlh4fx
 //CS 4414-001
@@ -51,6 +50,7 @@ void interpret(char* line[], int length, int pipeNum) {
 	int lineLength = length;
 	int pipefd[2 * pipeNum];
 	pipe(pipefd);
+	pipe(pipefd+2);
 	bool pipeBool = false;
 	int output_file;
 	bool output = false;
@@ -58,31 +58,46 @@ void interpret(char* line[], int length, int pipeNum) {
 	int input_file;
 	bool input = false;
 	char* input_name;
-    int helper = 0;
-    int helper2 = 0;
+    int pipeArgIndex = 0;
+    int pipeCount = 0;
+    int breakVar = 0;
+    int pipeNumClone = pipeNum;
+    int readIndex = -2;
+    int writeIndex = -1;
+    printf("pipeNum: %d\n", pipeNum);
 
     while (forkNum < pipeNum + 1) {
     	char *args[200];
     	int argIndex = 0;
     	int track = 0;
     	int argLen = 0;
-    	bool write;
+    	bool write = false;
+    	bool both = false;
+    	bool read = false;
 
-    	if (ii > 0) {
-    		write = false;
+    	if (pipeCount == pipeNum) {
+    		// You've already passed the last pipe. Next args will only read from pipe.
+    		read = true;
     	}
-
     	for (ii; ii < lineLength; ii++) {
-    		if (strcmp(line[ii], "|") == 0) {
-    			write = true;
+    		if (strcmp(line[ii], "|") == 0 && read == false) {
+    			pipeCount++;
+    			if (pipeCount == 1) {
+    				write = true;
+    			}
+    			if (pipeCount > 1) {
+    				both = true;
+    			}
     			break;
-    		} 
-    		args[argIndex + track] = line[ii];
-    		track++;
+    		}
+    		// args[argIndex + track] = line[ii];
+    		// track++;
     		argLen++;
+    		args[argIndex] = line[ii];
+    		argIndex++;
     	}
-
-    	args[track] = NULL;
+    	args[argIndex] = NULL;
+    	//args[track] = NULL;
     	ii++;
 
     	for (int i = 0; i < argLen; i++) {
@@ -120,6 +135,30 @@ void interpret(char* line[], int length, int pipeNum) {
 		}
 
     	forkNum++;
+    	//pipeArgIndex += 2;
+    	//pipeNum--;
+
+    	if (write == true) {
+    		printf("Writing: Arg: %s\n", args[0]);
+    		writeIndex += 2;
+    	}
+
+    	if (read == true) {
+    		printf("Reading: Arg: %s\n", args[0]);
+    		readIndex += 2;
+    	}
+
+    	if (both == true) {
+    		printf("Both: Arg: %s\n", args[0]);
+    		writeIndex+=2;
+    		readIndex+=2;
+    	}
+
+    	// for (int i = 0; i < argIndex; i++) {
+    	// 	printf("Args: %s\n", args[i]);
+    	// }
+    	// printf("DONE\n");
+
     	int pid = fork();
 
     	if (pid == 0) {
@@ -132,15 +171,37 @@ void interpret(char* line[], int length, int pipeNum) {
     			dup2(input_file, 0);
     		}
 
-    		if (pipeNum > 0) {
+    		if (pipeNumClone > 0) {
     			if (write == true) {
-    				dup2(pipefd[1], 1);
-    				close(pipefd[0]);
+    				printf("writing\n");
+    				if (dup2(pipefd[writeIndex], 1) == -1) {
+    					perror("Dup2 error writing");
+    				}
+    				printf("done\n");
+    				//close(pipefd[readIndex]);
 
-    			} else {
-    				dup2(pipefd[0], 0);
-    				close(pipefd[1]);
+    			} else if (write == false && both == false) {
+    				printf("reading\n");
+    				if (dup2(pipefd[readIndex], 0) == -1) {
+    					perror("Dup2 error reading");
+    					_exit(1);
+    				}
+    				//close(pipefd[writeIndex]);
+    			} else if (both == true) {
+    				printf("both\n");
+    				if(dup2(pipefd[readIndex], 0) == -1) {
+    					perror("Dup2 error reading for both");
+    				}
+    				if(dup2(pipefd[writeIndex], 1) == -1) {
+    					perror("Dup2 error writing for both");
+    				}
+    				//close(pipefd[readIndex]);
+    				//close(pipefd[writeIndex]);
     			}
+    			for (int xx = 0; xx < 2*pipeNum; xx++) {
+					close(pipefd[xx]);
+				}
+
 
     		}
     		
@@ -157,7 +218,10 @@ void interpret(char* line[], int length, int pipeNum) {
 		close(pipefd[xx]);
 	}
 	//wait for processes to finish
-	wait(&status);
+	for (int j = 0; j < pipeNumClone + 1; j++) {
+		wait(&status);
+	}
+	
 
 	//close files if necessary
 	if (output) {
@@ -179,6 +243,7 @@ int main () {
 	
 	while (true) {
 		//start shell
+		printf("Enter a command: ");
 		execute = true;
 		fgets(command, 255, stdin); //read in standard input
 		new_command = strtok(command, "\n");
