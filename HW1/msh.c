@@ -14,7 +14,7 @@
 
 //contains all valid chars
 char reference[71] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-        			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+					'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 					'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '-', '_', '<', '>', '|', '/', '\n', ' '};
 
 //check input command for invalid chars
@@ -48,7 +48,7 @@ void interpret(char* line[], int length, int pipeNum) {
 	int status; //used to wait for processes to finish
 	int forkNum = 0; //number of forks
 	int ii = 0; //used to keep track of command index
- 	int lineLength = length; //number of arguments in command
+	int lineLength = length; //number of arguments in command
 	int pipefd[2 * pipeNum]; //create necessary size for pipes
 	bool pipeBool = false;
 	int output_file;
@@ -57,66 +57,66 @@ void interpret(char* line[], int length, int pipeNum) {
 	int input_file;
 	bool input = false;
 	char* input_name;
-    int pipeCount = 0;
-    int pipeNumClone = pipeNum;
-    int readIndex = -2;
-    int writeIndex = -1;
+	int pipeCount = 0;
+	int pipeNumClone = pipeNum;
+	int readIndex = -2;
+	int writeIndex = -1;
 
-    //create the pipes
-    int k;
-    for (k = 0; k < pipeNum; k++) {
-    	pipe(pipefd + 2*k);
-    }
+	//create the pipes
+	int k;
+	for (k = 0; k < pipeNum; k++) {
+		pipe(pipefd + 2*k);
+	}
 
-    //while there are still forks present
-    while (forkNum < pipeNum + 1) {
-    	char *args[200];
-    	int argIndex = 0;
-    	int track = 0;
-    	int argLen = 0;
-    	bool write = false;
-    	bool both = false;
-    	bool read = false;
+	//while there are still forks present
+	while (forkNum < pipeNum + 1) {
+		char *args[200];
+		int argIndex = 0;
+		int track = 0;
+		int argLen = 0;
+		bool write = false;
+		bool both = false;
+		bool read = false;
 
-    	if (pipeCount == pipeNum) {
-    		// You've already passed the last pipe. Next args will only read from pipe.
-    		read = true;
-    	}
+		if (pipeCount == pipeNum) {
+			// You've already passed the last pipe. Next args will only read from pipe.
+			read = true;
+		}
 
-    	// iterates through command, checks for pipe character
-    	for (ii; ii < lineLength; ii++) {
-    		if (strcmp(line[ii], "|") == 0 && read == false) { //if a pipe character is found and not reading
-    			pipeCount++; //increment to keep track of number of pipes
-    			if (pipeCount == 1) { //first pipe, must be writing
-    				write = true;
-    			}
-    			if (pipeCount > 1) { //not the first pipe and not reading, must be doing both
-    				both = true;
-    			}
-    			break;
-    		}
-    		argLen++; //keep track of number of arguments
-    		args[argIndex] = line[ii]; //add word to new array
-    		argIndex++; //track of argument index
-    	}
-    	args[argIndex] = NULL; //make last character in array null
-    	ii++; //increment past the pipe (if any) so next iteration will avoid pipe character
+		// iterates through command, checks for pipe character
+		for (ii; ii < lineLength; ii++) {
+			if (strcmp(line[ii], "|") == 0 && read == false) { //if a pipe character is found and not reading
+				pipeCount++; //increment to keep track of number of pipes
+				if (pipeCount == 1) { //first pipe, must be writing
+					write = true;
+				}
+				if (pipeCount > 1) { //not the first pipe and not reading, must be doing both
+					both = true;
+				}
+				break;
+			}
+			argLen++; //keep track of number of arguments
+			args[argIndex] = line[ii]; //add word to new array
+			argIndex++; //track of argument index
+		}
+		args[argIndex] = NULL; //make last character in array null
+		ii++; //increment past the pipe (if any) so next iteration will avoid pipe character
 
-    	//increment through the array and check for input/output redirection
-    	int zz;
-    	for (zz = 0; zz < argLen; zz++) {
-    		if (strcmp(args[zz], ">") == 0) {
-    			output = true;
-    		}
-    		if (strcmp(args[zz], "<") == 0) {
-    			input = true;
-    		}
-    	}
+		//increment through the array and check for input/output redirection
+		int zz;
+		for (zz = 0; zz < argLen; zz++) {
+			if (strcmp(args[zz], ">") == 0) {
+				output = true;
+			}
+			if (strcmp(args[zz], "<") == 0) {
+				input = true;
+			}
+		}
 
-    	//create files for redirection
-    	if (output) {
-    		int i;
-    		for (i = 0; i < argLen; i++) {
+		//create files for redirection
+		if (output) {
+			int i;
+			for (i = 0; i < argLen; i++) {
 				if (strcmp(args[i], ">") == 0) {
 					output_name = args[i+1];
 					output_file = open(output_name, O_CREAT | O_RDWR, 0777);
@@ -125,7 +125,7 @@ void interpret(char* line[], int length, int pipeNum) {
 					break;
 				}
 			}
-    	} 
+		} 
 	
 		if (input) {
 			int j;
@@ -140,73 +140,73 @@ void interpret(char* line[], int length, int pipeNum) {
 			}
 		}
 
-    	forkNum++;
+		forkNum++;
 
-    	//for piping. if performing any action, increment the index by 2 for the next pipe
-    	if (write == true) {
-    		writeIndex += 2;
-    	}
+		//for piping. if performing any action, increment the index by 2 for the next pipe
+		if (write == true) {
+			writeIndex += 2;
+		}
 
-    	if (read == true) {
-    		readIndex += 2;
-    	}
+		if (read == true) {
+			readIndex += 2;
+		}
 
-    	if (both == true) {
-    		writeIndex+=2;
-    		readIndex+=2;
-    	}
+		if (both == true) {
+			writeIndex+=2;
+			readIndex+=2;
+		}
 
-    	int pid = fork();
+		int pid = fork();
 
-    	if (pid == 0) {
-    		//for redirection
-    		if (output) {
-    			dup2(output_file, 1);
-    		}
+		if (pid == 0) {
+			//for redirection
+			if (output) {
+				dup2(output_file, 1);
+			}
 
-    		if (input) {
-    			dup2(input_file, 0);
-    		}
+			if (input) {
+				dup2(input_file, 0);
+			}
 
-    		//for piping
-    		if (pipeNumClone > 0) {
-    			if (write == true) { //redirecting stdout for next pipe
-    				if (dup2(pipefd[writeIndex], 1) == -1) {
-    					perror("Dup2 error writing");
-    				}
+			//for piping
+			if (pipeNumClone > 0) {
+				if (write == true) { //redirecting stdout for next pipe
+					if (dup2(pipefd[writeIndex], 1) == -1) {
+						perror("Dup2 error writing");
+					}
 
-    			} else if (write == false && both == false) { //reading stdin from previous pipe
-    				if (dup2(pipefd[readIndex], 0) == -1) {
-    					perror("Dup2 error reading");
-    					_exit(1);
-    				}
-    			} else if (both == true) {
-    				if(dup2(pipefd[readIndex], 0) == -1) { //reading stdin from previous pipe and redirecting stdout
-    					perror("Dup2 error reading for both");
-    				}
-    				if(dup2(pipefd[writeIndex], 1) == -1) {
-    					perror("Dup2 error writing for both");
-    				}
-    			}
-    			//close the pipes
-    			int xx;
-    			for (xx = 0; xx < 2*pipeNum; xx++) {
+				} else if (write == false && both == false) { //reading stdin from previous pipe
+					if (dup2(pipefd[readIndex], 0) == -1) {
+						perror("Dup2 error reading");
+						_exit(1);
+					}
+				} else if (both == true) {
+					if(dup2(pipefd[readIndex], 0) == -1) { //reading stdin from previous pipe and redirecting stdout
+						perror("Dup2 error reading for both");
+					}
+					if(dup2(pipefd[writeIndex], 1) == -1) {
+						perror("Dup2 error writing for both");
+					}
+				}
+				//close the pipes
+				int xx;
+				for (xx = 0; xx < 2*pipeNum; xx++) {
 					close(pipefd[xx]);
 				}
 
 
-    		}
-    		//execute the command
-    		execvp(args[0], args);
-    		printf("ERROR: Command failed.\n");
-    		exit(0);
+			}
+			//execute the command
+			execvp(args[0], args);
+			printf("ERROR: Command failed.\n");
+			exit(0);
 
-    	} 
+		} 
 
-    }
+	}
 
 	//make sure all pipes are closed
-	int yy;	
+	int yy; 
 	for (yy = 0; yy < 2*pipeNum; yy++) {
 		close(pipefd[yy]);
 	}
@@ -310,13 +310,13 @@ int main () {
 				}
 
 				// for (int z = 0; z < innerLen; z++) {
-				// 	char* innerTok = strArray[i];
-				// 	int innerTokLen = strlen(innerTok);
+				//  char* innerTok = strArray[i];
+				//  int innerTokLen = strlen(innerTok);
 
-				// 	if (innerTok[z] == "|" && innerTokLen > 0) {
-				// 		execute = false;
-				// 		printf("ERROR: Pipe operator cannot be part of a word.\n");
-				// 	}
+				//  if (innerTok[z] == "|" && innerTokLen > 0) {
+				//      execute = false;
+				//      printf("ERROR: Pipe operator cannot be part of a word.\n");
+				//  }
 				// }
 
 			}
