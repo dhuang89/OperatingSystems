@@ -1,4 +1,3 @@
-
 //Dennis Huang
 //dlh4fx
 //CS 4414-001
@@ -24,10 +23,12 @@ bool validate(char* input) {
 	int inputLength = strlen(input); //length of parameter
 
 	//iterate through all chars
-	for (int i = 0; i < inputLength; i++) {
+	int i;
+	int j;
+	for (i = 0; i < inputLength; i++) {
 		isValid = false;
 
-		for (int j = 0; j < 71; j++) {
+		for (j = 0; j < 71; j++) {
 			if (input[i] == reference[j]) { //mark char as valid
 				isValid = true;
 				break;
@@ -44,13 +45,11 @@ bool validate(char* input) {
 
 //function to interpret a command typed in the shell
 void interpret(char* line[], int length, int pipeNum) {
-	int status;
-	int forkNum = 0;
-	int pipeIndex = 0;
-	int ii = 0;
-	int lineLength = length;
-	int pipefd[2 * pipeNum];
-	pipe(pipefd);
+	int status; //used to wait for processes to finish
+	int forkNum = 0; //number of forks
+	int ii = 0; //used to keep track of command index
+ 	int lineLength = length; //number of arguments in command
+	int pipefd[2 * pipeNum]; //create necessary size for pipes
 	bool pipeBool = false;
 	int output_file;
 	bool output = false;
@@ -58,45 +57,66 @@ void interpret(char* line[], int length, int pipeNum) {
 	int input_file;
 	bool input = false;
 	char* input_name;
-    int helper = 0;
-    int helper2 = 0;
+    int pipeCount = 0;
+    int pipeNumClone = pipeNum;
+    int readIndex = -2;
+    int writeIndex = -1;
 
+    //create the pipes
+    int k;
+    for (k = 0; k < pipeNum; k++) {
+    	pipe(pipefd + 2*k);
+    }
+
+    //while there are still forks present
     while (forkNum < pipeNum + 1) {
     	char *args[200];
     	int argIndex = 0;
     	int track = 0;
     	int argLen = 0;
-    	bool write;
+    	bool write = false;
+    	bool both = false;
+    	bool read = false;
 
-    	if (ii > 0) {
-    		write = false;
+    	if (pipeCount == pipeNum) {
+    		// You've already passed the last pipe. Next args will only read from pipe.
+    		read = true;
     	}
 
+    	// iterates through command, checks for pipe character
     	for (ii; ii < lineLength; ii++) {
-    		if (strcmp(line[ii], "|") == 0) {
-    			write = true;
+    		if (strcmp(line[ii], "|") == 0 && read == false) { //if a pipe character is found and not reading
+    			pipeCount++; //increment to keep track of number of pipes
+    			if (pipeCount == 1) { //first pipe, must be writing
+    				write = true;
+    			}
+    			if (pipeCount > 1) { //not the first pipe and not reading, must be doing both
+    				both = true;
+    			}
     			break;
-    		} 
-    		args[argIndex + track] = line[ii];
-    		track++;
-    		argLen++;
+    		}
+    		argLen++; //keep track of number of arguments
+    		args[argIndex] = line[ii]; //add word to new array
+    		argIndex++; //track of argument index
     	}
+    	args[argIndex] = NULL; //make last character in array null
+    	ii++; //increment past the pipe (if any) so next iteration will avoid pipe character
 
-    	args[track] = NULL;
-    	ii++;
-
-    	for (int i = 0; i < argLen; i++) {
-    		if (strcmp(args[i], ">") == 0) {
+    	//increment through the array and check for input/output redirection
+    	int zz;
+    	for (zz = 0; zz < argLen; zz++) {
+    		if (strcmp(args[zz], ">") == 0) {
     			output = true;
     		}
-    		if (strcmp(args[i], "<") == 0) {
+    		if (strcmp(args[zz], "<") == 0) {
     			input = true;
     		}
     	}
 
-    	//redirection
+    	//create files for redirection
     	if (output) {
-    		for (int i = 0; i < argLen; i++) {
+    		int i;
+    		for (i = 0; i < argLen; i++) {
 				if (strcmp(args[i], ">") == 0) {
 					output_name = args[i+1];
 					output_file = open(output_name, O_CREAT | O_RDWR, 0777);
@@ -108,7 +128,8 @@ void interpret(char* line[], int length, int pipeNum) {
     	} 
 	
 		if (input) {
-			for (int j = 0; j < argLen; j++) {
+			int j;
+			for (j = 0; j < argLen; j++) {
 				if (strcmp(args[j], "<") == 0) {
 					input_name = args[j+1];
 					input_file = open(input_name, O_CREAT | O_RDONLY, 0777);
@@ -120,10 +141,25 @@ void interpret(char* line[], int length, int pipeNum) {
 		}
 
     	forkNum++;
+
+    	//for piping. if performing any action, increment the index by 2 for the next pipe
+    	if (write == true) {
+    		writeIndex += 2;
+    	}
+
+    	if (read == true) {
+    		readIndex += 2;
+    	}
+
+    	if (both == true) {
+    		writeIndex+=2;
+    		readIndex+=2;
+    	}
+
     	int pid = fork();
 
     	if (pid == 0) {
-
+    		//for redirection
     		if (output) {
     			dup2(output_file, 1);
     		}
@@ -132,18 +168,35 @@ void interpret(char* line[], int length, int pipeNum) {
     			dup2(input_file, 0);
     		}
 
-    		if (pipeNum > 0) {
-    			if (write == true) {
-    				dup2(pipefd[1], 1);
-    				close(pipefd[0]);
+    		//for piping
+    		if (pipeNumClone > 0) {
+    			if (write == true) { //redirecting stdout for next pipe
+    				if (dup2(pipefd[writeIndex], 1) == -1) {
+    					perror("Dup2 error writing");
+    				}
 
-    			} else {
-    				dup2(pipefd[0], 0);
-    				close(pipefd[1]);
+    			} else if (write == false && both == false) { //reading stdin from previous pipe
+    				if (dup2(pipefd[readIndex], 0) == -1) {
+    					perror("Dup2 error reading");
+    					_exit(1);
+    				}
+    			} else if (both == true) {
+    				if(dup2(pipefd[readIndex], 0) == -1) { //reading stdin from previous pipe and redirecting stdout
+    					perror("Dup2 error reading for both");
+    				}
+    				if(dup2(pipefd[writeIndex], 1) == -1) {
+    					perror("Dup2 error writing for both");
+    				}
     			}
+    			//close the pipes
+    			int xx;
+    			for (xx = 0; xx < 2*pipeNum; xx++) {
+					close(pipefd[xx]);
+				}
+
 
     		}
-    		
+    		//execute the command
     		execvp(args[0], args);
     		printf("ERROR: Command failed.\n");
     		exit(0);
@@ -152,12 +205,17 @@ void interpret(char* line[], int length, int pipeNum) {
 
     }
 
-	//make sure all pipes are closed	
-	for (int xx = 0; xx < 2*pipeNum; xx++) {
-		close(pipefd[xx]);
+	//make sure all pipes are closed
+	int yy;	
+	for (yy = 0; yy < 2*pipeNum; yy++) {
+		close(pipefd[yy]);
 	}
 	//wait for processes to finish
-	wait(&status);
+	int jj;
+	for (jj = 0; jj < pipeNumClone + 1; jj++) {
+		wait(&status);
+	}
+	
 
 	//close files if necessary
 	if (output) {
@@ -179,6 +237,7 @@ int main () {
 	
 	while (true) {
 		//start shell
+		printf("Enter a command: ");
 		execute = true;
 		fgets(command, 255, stdin); //read in standard input
 		new_command = strtok(command, "\n");
