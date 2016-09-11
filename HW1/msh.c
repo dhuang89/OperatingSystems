@@ -50,7 +50,6 @@ void interpret(char* line[], int length, int pipeNum) {
 	int ii = 0; //used to keep track of command index
 	int lineLength = length; //number of arguments in command
 	int pipefd[2 * pipeNum]; //create necessary size for pipes
-	bool pipeBool = false;
 	int output_file;
 	bool output = false;
 	char* output_name;
@@ -72,7 +71,6 @@ void interpret(char* line[], int length, int pipeNum) {
 	while (forkNum < pipeNum + 1) {
 		char *args[200];
 		int argIndex = 0;
-		int track = 0;
 		int argLen = 0;
 		bool write = false;
 		bool both = false;
@@ -84,7 +82,7 @@ void interpret(char* line[], int length, int pipeNum) {
 		}
 
 		// iterates through command, checks for pipe character
-		for (ii; ii < lineLength; ii++) {
+		for (; ii < lineLength; ii++) {
 			if (strcmp(line[ii], "|") == 0 && read == false) { //if a pipe character is found and not reading
 				pipeCount++; //increment to keep track of number of pipes
 				if (pipeCount == 1) { //first pipe, must be writing
