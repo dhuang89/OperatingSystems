@@ -307,15 +307,16 @@ int main () {
 					printf("ERROR: Pipe command must be separating two words.\n");
 				}
 
-				// for (int z = 0; z < innerLen; z++) {
-				//  char* innerTok = strArray[i];
-				//  int innerTokLen = strlen(innerTok);
+				int z;
+				for (z = 0; z < innerLen; z++) {
+				 char* innerTok = strArray[i];
+				 int innerTokLen = strlen(innerTok);
 
-				//  if (innerTok[z] == "|" && innerTokLen > 0) {
-				//      execute = false;
-				//      printf("ERROR: Pipe operator cannot be part of a word.\n");
-				//  }
-				// }
+				 if (strcmp(&innerTok[z], "|") == 0 && innerTokLen > 1) {
+				     execute = false;
+				     printf("ERROR: Pipe operator cannot be part of a word.\n");
+				 }
+				}
 
 			}
 
