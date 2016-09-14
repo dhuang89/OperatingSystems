@@ -6,14 +6,32 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <pthread.h>
 
+int i = 0;
+
+void* maximum(void *a) {
+	int size = i;
+	int* arr = (int*) a;
+	int x;
+	int max = arr[0];
+	int current;
+
+	for (x = 0; x < size; x++) {
+		current = arr[x];
+		if (current > max) {
+			max = current;
+		}
+	}
+
+	printf("Max is: %d\n", max);	
+}
 
 int main() {
 
 	int input[255];
 	char breaker[20];
 	int holder;
-	int i = 0;
 	bool takeInput = true;
 
 	while (takeInput == true) {
@@ -29,11 +47,10 @@ int main() {
 		input[i] = holder;
 		i++;
 	}
-	printf("here\n");
-	int j;
-	for (j = 0; j < i; j++) {
-		printf("Number in array: %d\n", input[j]);
-	}
-	
+
+	pthread_t thread1;
+
+	pthread_create(&thread1, NULL, &maximum, (void*) input);
+	pthread_join(thread1, NULL);
 
 }
