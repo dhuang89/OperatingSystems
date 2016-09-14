@@ -196,7 +196,7 @@ void interpret(char* line[], int length, int pipeNum) {
 			}
 			//execute the command
 			execvp(args[0], args);
-			printf("ERROR: Command failed.\n");
+			printf("invalid input\n");
 			exit(0);
 
 		} 
@@ -212,8 +212,8 @@ void interpret(char* line[], int length, int pipeNum) {
 	int jj;
 	for (jj = 0; jj < pipeNumClone + 1; jj++) {
 		wait(&status);
+		fprintf(stderr, "%d\n", WEXITSTATUS(status));
 	}
-	
 
 	//close files if necessary
 	if (output) {
@@ -235,21 +235,20 @@ int main () {
 	
 	while (true) {
 		//start shell
-		printf("Enter a command: ");
 		execute = true;
 		fgets(command, 255, stdin); //read in standard input
 		new_command = strtok(command, "\n");
 		length = strlen(new_command); //length of command input
 
 		if (length > 100) { //if command is more than 100 characters, print out an error
-			printf("ERROR: Exceeded maximum length of 100 characters.\n");
+			printf("invalid input\n");
 			
 		}
 		else if (strcmp(new_command, "exit") == 0) { //break out of shell command
 			break;
 		} 
 		else if (!validate(new_command)) { //invalid char is input
-			printf("ERROR: Invalid character found.\n");
+			printf("invalid input\n");
 		}
 		else {
 			//parse each line into an array of strings
@@ -279,32 +278,32 @@ int main () {
 
 				if (i == 0 && (strcmp(strArray[i], ">") == 0 || strcmp(strArray[i], "<") == 0 || strcmp(strArray[i], "|") == 0)) {
 					execute = false;
-					printf("ERROR: Input must begin with a word.\n");
+					printf("invalid input\n");
 					
 				}
 
 				if (strcmp(strArray[i], ">") == 0 && i < arrayLen - 2) {
 					if (strcmp(strArray[i + 2], "|") == 0) {
-						printf("ERROR: Name of text file cannot be written into a pipe.\n");
+						printf("invalid input\n");
 						
 					}
 				}
 
 				if (strcmp(strArray[i], ">>") == 0 || strcmp(strArray[i], "<<") == 0 || strcmp(strArray[i], "<>") == 0 || strcmp(strArray[i], "><") == 0) {
 					execute = false;
-					printf("ERROR: Output redirection operators cannot be next to one another.\n");
+					printf("invalid input\n");
 				}
 
 				if (strcmp(strArray[i], "<") == 0 || strcmp(strArray[i], ">") == 0 || strcmp(strArray[i], "|") == 0) {
 					if (strcmp(strArray[i + 1], "|") == 0 || strcmp(strArray[i + 1], "<") == 0 || strcmp(strArray[i + 1], ">") == 0) {
 						execute = false;
-						printf("ERROR: Operators cannot be succeeded with another operator.\n");
+						printf("invalid input\n");
 					}
 				}
 
 				if (strcmp(strArray[i], "|") == 0 && i == arrayLen - 1) {
 					execute = false;
-					printf("ERROR: Pipe command must be separating two words.\n");
+					printf("invalid input\n");
 				}
 
 				int z;
@@ -314,7 +313,7 @@ int main () {
 
 				 if (strcmp(&innerTok[z], "|") == 0 && innerTokLen > 1) {
 				     execute = false;
-				     printf("ERROR: Pipe operator cannot be part of a word.\n");
+				     printf("invalid input\n");
 				 }
 				}
 
