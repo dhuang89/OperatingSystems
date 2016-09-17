@@ -9,30 +9,33 @@
 #include <pthread.h>
 
 int i = 0;
+int input[255];
+
+typedef struct threadStruct {
+	pthread_t id;
+	int max;
+	int index;
+} ThreadData;
 
 void* maximum(void *a) {
-	int size = i;
-	int* arr = (int*) a;
-	int x;
-	int max = arr[0];
-	int current;
+	ThreadData *myThread = (ThreadData*) a;
+	int max2 = input[myThread->index];
 
-	for (x = 0; x < size; x++) {
-		current = arr[x];
-		if (current > max) {
-			max = current;
-		}
+	if (input[myThread->index+1] > max2) {
+		max2 = input[myThread->index+1];
 	}
+	myThread->max = max2;
 
-	printf("Max is: %d\n", max);	
+	printf("Max is: %d\n", max2);	
 }
 
 int main() {
-
-	int input[255];
 	char breaker[20];
 	int holder;
 	bool takeInput = true;
+	int ret = -1;
+	int assignedIndex = 0;
+	int finalMax;
 
 	while (takeInput == true) {
 		printf("Enter a number: ");
@@ -48,9 +51,39 @@ int main() {
 		i++;
 	}
 
-	pthread_t thread1;
+	printf("i is: %d\n", i);
 
-	pthread_create(&thread1, NULL, &maximum, (void*) input);
-	pthread_join(thread1, NULL);
+	int count = i / 2;
+	ThreadData threads[count];
+	int j;
+
+	for (j = 0; j < count; j++) {
+		printf("thread %d\n", j);
+		threads[j].index = assignedIndex;
+		assignedIndex += 2; 
+		ret = pthread_create(&(threads[j].id), NULL, &maximum, (void*) (threads+j));
+
+		if (ret != 0) {
+			printf("Error creating thread\n");
+			exit(1);
+		}
+	}	
+
+	int k;
+
+	for (k = 0; k < count; k++) {
+		printf("joining thread %d\n", k);
+		pthread_join(threads[k].id, NULL);
+	}
+
+	int x;
+	finalMax = threads[0].max;
+	for (x = 0; x < count; x++) {
+		if (threads[x].max > finalMax) {
+			finalMax = threads[x].max;
+		}
+	}
+
+	printf("Final max is: %d\n", finalMax);
 
 }
