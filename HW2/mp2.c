@@ -10,6 +10,7 @@
 
 int i = 0;
 int input[255];
+pthread_barrier_t barrier;
 
 typedef struct threadStruct {
 	pthread_t id;
@@ -27,6 +28,10 @@ void* maximum(void *a) {
 	myThread->max = max2;
 
 	printf("Max is: %d\n", max2);	
+
+	printf("waiting\n");
+	pthread_barrier_wait(&barrier);
+	printf("done waiting\n");
 }
 
 int main() {
@@ -36,13 +41,13 @@ int main() {
 	int ret = -1;
 	int assignedIndex = 0;
 	int finalMax;
+	int rounds = 0;
 
 	while (takeInput == true) {
 		printf("Enter a number: ");
 		fgets(breaker, 20, stdin);
 
 		if (strcmp(breaker, "\n") == 0) {
-			printf("breaking\n");
 			break;
 		}
 
@@ -51,9 +56,10 @@ int main() {
 		i++;
 	}
 
-	printf("i is: %d\n", i);
-
 	int count = i / 2;
+	int countCopy = count;
+	rounds = count/2;
+	pthread_barrier_init(&barrier, NULL, count);
 	ThreadData threads[count];
 	int j;
 
@@ -76,12 +82,25 @@ int main() {
 		pthread_join(threads[k].id, NULL);
 	}
 
-	int x;
-	finalMax = threads[0].max;
-	for (x = 0; x < count; x++) {
-		if (threads[x].max > finalMax) {
-			finalMax = threads[x].max;
+	while (rounds != 0) {
+		//max function here
+		int x;
+		int y = 0;
+		for (x = 0; x < countCopy; x+=2) {
+			if (threads[x].max > threads[x+1].max) {
+				threads[y] = threads[x];
+			} else {
+				threads[y] = threads[x+1];
+			}
+			y++;
 		}
+
+		countCopy = countCopy / 2;
+		if (countCopy == 1) {
+			finalMax = threads[0].max;
+		}
+		rounds--;
+		printf("rounds: %d\n", rounds);
 	}
 
 	printf("Final max is: %d\n", finalMax);
