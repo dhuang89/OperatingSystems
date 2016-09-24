@@ -93,12 +93,11 @@ void* maximum(void *a) {
 		sem_post(&barrier2);
 		numRounds--;
 	}
-	
+	return 0;
 }
 
 int main() {
 	char breaker[20]; //string char looking for newline character
-	int holder; //int being typed in 
 	bool takeInput = true;
 	int ret = -1;
 	int assignedIndex = 0;
@@ -152,5 +151,5 @@ int main() {
 
 	//print out absolute max to stdout
 	printf("%d\n", finalMax);
-
+	return 0;
 }
