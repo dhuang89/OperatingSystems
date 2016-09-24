@@ -11,11 +11,16 @@
 int i = 0;
 int input[255];
 pthread_barrier_t barrier;
+int rounds = 0;
+int finArr[255];
+int countCopy;
+int finalMax;
 
 typedef struct threadStruct {
 	pthread_t id;
 	int max;
 	int index;
+	int otherIndex;
 } ThreadData;
 
 void* maximum(void *a) {
@@ -26,12 +31,41 @@ void* maximum(void *a) {
 		max2 = input[myThread->index+1];
 	}
 	myThread->max = max2;
+	int numRounds = rounds;
+	finArr[myThread->otherIndex] = myThread->max;
+	pthread_barrier_wait(&barrier);
+
+	while (numRounds != 0) {
+		if (myThread->otherIndex % 2 == 0) {
+			if (finArr[myThread->otherIndex] < finArr[myThread->otherIndex+1]) {
+				if (myThread->otherIndex > 0) {
+					if (finArr[myThread->otherIndex/2] < finArr[myThread->otherIndex+1]) {
+						finArr[myThread->otherIndex/2] = finArr[myThread->otherIndex+1];
+					}
+					
+				} else {
+					finArr[myThread->otherIndex] = finArr[myThread->otherIndex+1];
+				}
+				
+			}
+
+			if (finArr[myThread->otherIndex] > finArr[myThread->otherIndex+1]) {
+				if (myThread->otherIndex > 0) {
+					if (finArr[myThread->otherIndex/2] > finArr[myThread->otherIndex+1]) {
+						finArr[myThread->otherIndex/2] = finArr[myThread->otherIndex+1];
+					}
+					finArr[myThread->otherIndex/2] = finArr[myThread->otherIndex];
+				}
+			}
+		}
+
+		pthread_barrier_wait(&barrier);
+		numRounds--;
+	}
 
 	printf("Max is: %d\n", max2);	
 
-	printf("waiting\n");
-	pthread_barrier_wait(&barrier);
-	printf("done waiting\n");
+	
 }
 
 int main() {
@@ -40,8 +74,8 @@ int main() {
 	bool takeInput = true;
 	int ret = -1;
 	int assignedIndex = 0;
-	int finalMax;
-	int rounds = 0;
+	int finalIndex = 0;
+
 
 	while (takeInput == true) {
 		printf("Enter a number: ");
@@ -57,7 +91,7 @@ int main() {
 	}
 
 	int count = i / 2;
-	int countCopy = count;
+	countCopy = count;
 	rounds = count/2;
 	pthread_barrier_init(&barrier, NULL, count);
 	ThreadData threads[count];
@@ -66,6 +100,8 @@ int main() {
 	for (j = 0; j < count; j++) {
 		printf("thread %d\n", j);
 		threads[j].index = assignedIndex;
+		threads[j].otherIndex = finalIndex;
+		finalIndex++;
 		assignedIndex += 2; 
 		ret = pthread_create(&(threads[j].id), NULL, &maximum, (void*) (threads+j));
 
@@ -75,34 +111,15 @@ int main() {
 		}
 	}	
 
+
+
 	int k;
 
 	for (k = 0; k < count; k++) {
 		printf("joining thread %d\n", k);
 		pthread_join(threads[k].id, NULL);
 	}
-
-	while (rounds != 0) {
-		//max function here
-		int x;
-		int y = 0;
-		for (x = 0; x < countCopy; x+=2) {
-			if (threads[x].max > threads[x+1].max) {
-				threads[y] = threads[x];
-			} else {
-				threads[y] = threads[x+1];
-			}
-			y++;
-		}
-
-		countCopy = countCopy / 2;
-		if (countCopy == 1) {
-			finalMax = threads[0].max;
-		}
-		rounds--;
-		printf("rounds: %d\n", rounds);
-	}
-
+	finalMax = finArr[0];
 	printf("Final max is: %d\n", finalMax);
 
 }
