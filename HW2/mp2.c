@@ -34,6 +34,7 @@ typedef struct threadStruct {
 void* maximum(void *a) {
 	ThreadData *myThread = (ThreadData*) a; //cast to struct
 	int max2 = input[myThread->index]; 
+	int mutexCount = 0;
 
 	//each thread is responsible for two indices, therefore two integers
 	//find the max and store it in the struct
@@ -47,6 +48,7 @@ void* maximum(void *a) {
 
 	sem_wait(&mutex);
 	semcount++;
+	mutexCount = 1;
 	if (semcount == countCopy) {
 		sem_wait(&barrier2); //lock second barrier
 		sem_post(&barrier); //unlock first
@@ -74,24 +76,38 @@ void* maximum(void *a) {
 			if (finArr[myThread->otherIndex] > finArr[myThread->otherIndex+1]) {
 				if (myThread->otherIndex > 0) { 
 					//check to make sure index writing to is actually greater than current int
-					if (finArr[myThread->otherIndex/2] > finArr[myThread->otherIndex+1]) {
-						finArr[myThread->otherIndex/2] = finArr[myThread->otherIndex+1];
+					if (finArr[myThread->otherIndex/2] < finArr[myThread->otherIndex]) {
+						finArr[myThread->otherIndex/2] = finArr[myThread->otherIndex];
 					}
-					finArr[myThread->otherIndex/2] = finArr[myThread->otherIndex];
-				}
+				} 
 			}
 		}
-
-		sem_wait(&mutex);
-		semcount--;
-		if (semcount == 0) {
-			sem_wait(&barrier); //lock first barrier
-			sem_post(&barrier2); //unlock second
+		if (mutexCount == 1) {
+			sem_wait(&mutex);
+			semcount--;
+			numRounds--;
+			mutexCount = 0;
+			if (semcount == 0) {
+				sem_wait(&barrier); //lock first barrier
+				sem_post(&barrier2); //unlock second
+			}
+			sem_post(&mutex);
+			sem_wait(&barrier2); //signal second barrier
+			sem_post(&barrier2);
+		} else {
+			sem_wait(&mutex);
+			semcount++;
+			numRounds--;
+			mutexCount = 1;
+			if (semcount == countCopy) {
+				sem_wait(&barrier2); //lock second barrier
+				sem_post(&barrier); //unlock first
+			}		
+			sem_post(&mutex); 
+			sem_wait(&barrier); //signal first barrier
+			sem_post(&barrier);
 		}
-		sem_post(&mutex);
-		sem_wait(&barrier2); //signal second barrier
-		sem_post(&barrier2);
-		numRounds--;
+		
 	}
 	return 0;
 }
@@ -150,6 +166,6 @@ int main() {
 	finalMax = finArr[0];
 
 	//print out absolute max to stdout
-	printf("%d\n", finalMax);
+	printf("absolute: %d\n", finalMax);
 	return 0;
 }
