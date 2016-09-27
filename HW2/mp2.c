@@ -11,10 +11,10 @@
 
 //global variables
 int i = 0; //counts number of input ints there are
-int input[255]; //array that contains user input
+int input[10000]; //array that contains user input
 //pthread_barrier_t barrier;
 int rounds = 0; //number of rounds of max computing there will be
-int finArr[255]; //array that holds ints and is used to compute the max
+int finArr[10000]; //array that holds ints and is used to compute the max
 int countCopy; //copy of the int count
 int finalMax; //final max integer printed out to stdout
 sem_t mutex; //mutex semaphore
@@ -109,6 +109,8 @@ void* maximum(void *a) {
 		}
 		
 	}
+
+	finalMax = finArr[0];
 	return 0;
 }
 
@@ -163,9 +165,8 @@ int main() {
 	for (k = 0; k < count; k++) {
 		pthread_join(threads[k].id, NULL);
 	}
-	finalMax = finArr[0];
 
 	//print out absolute max to stdout
-	printf("absolute: %d\n", finalMax);
+	printf("%d\n", finalMax);
 	return 0;
 }
